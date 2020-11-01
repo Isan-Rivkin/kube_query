@@ -1,8 +1,11 @@
+BIN_DIR='/usr/local/bin'
+
 release:
 	go build main.go
-	mv main kq 
-	cp kq /usr/local/bin/
+	mv main kq
+	echo "Installing to ${BIN_DIR}" 
+	mv kq ${BIN_DIR}
 test:
 	kq get pods -n kube-system
 clean: 
-	rm /usr/local/bin/kq
+	rm ${BIN_DIR}/kq

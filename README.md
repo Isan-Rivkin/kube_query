@@ -6,11 +6,8 @@ Currently will query only AWS EKS clusters.
 ### Install 
 
 ```bash
-git clone 
-go build main.go 
-cp main.go <kq>
-# on Macos to use kq globally 
-mv kq /usr/local/bin/
+git clone
+make release
 ```
 
 ### Usage
