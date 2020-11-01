@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"flag"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -18,6 +17,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
+
+var Interrupted = false
 
 func UseContext(context string) error {
 	return Run("kubectl", []string{"config", "use-context", context})
@@ -35,9 +36,11 @@ func ExecForEach(context, namespace, kubeconfig string, args []string) {
 		"context":   context,
 		"namespace": namespace,
 	})
-
+	if Interrupted {
+		lg.Info("Interrupted closing")
+		return
+	}
 	lg.Info("===============================================")
-
 	if err := UseContext(context); err != nil {
 		lg.WithError(err).Error("failed changing context")
 	}
@@ -85,7 +88,7 @@ func Run(command string, args []string) error {
 }
 
 func PrintHelp() {
-	log.Info("Usage: kq get pods -n pe")
+	log.Info("Usage: kq get pods --namespace kube-system")
 }
 
 func ValidateAndGet() ([]string, error) {
@@ -98,13 +101,18 @@ func ValidateAndGet() ([]string, error) {
 	}
 	return result, nil
 }
-func SetupCloseHandler() {
+
+func BackToOriginalNamespace(currCtx, currNs string) {
+	Interrupted = true
+	Run("kubectl", []string{"config", "use-context", currCtx, "--namespace", currNs})
+}
+func SetupCloseHandler(currCtx, currNs string) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Println("\r- Ctrl+C pressed in Terminal")
-		DeleteFiles()
+		log.Info("\r- Shutting down, changing back to the original context:", currCtx)
+		BackToOriginalNamespace(currCtx, currNs)
 		os.Exit(0)
 	}()
 }
@@ -128,13 +136,13 @@ func main() {
 
 	clientCfg, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	currCtx := clientCfg.CurrentContext
+	currNs := clientCfg.Contexts[currCtx].Namespace
 
-	SetupCloseHandler()
+	SetupCloseHandler(currCtx, currNs)
 	for _, ctx := range clientCfg.Contexts {
 		if strings.Contains(ctx.Cluster, "arn:aws:eks") {
 			ExecForEach(ctx.Cluster, ctx.Namespace, *kubeconfig, params)
 		}
 	}
-
-	Run("kubectl", []string{"config", "use-context", currCtx})
+	BackToOriginalNamespace(currCtx, currNs)
 }
