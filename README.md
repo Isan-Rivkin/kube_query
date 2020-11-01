@@ -7,12 +7,14 @@ Currently will query only AWS EKS clusters.
 
 ```bash
 git clone
+# default location on for Macos /usr/local/bin
 make release
 ```
-### Uninstall
 
-```bash 
-make clean
+### Custom binary location
+
+```bash
+make release BIN_DIR='/path/to/kq/binary' 
 ```
 
 ### Usage
