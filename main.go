@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -33,13 +36,8 @@ func ExecForEach(context, namespace, kubeconfig string, args []string) {
 		"namespace": namespace,
 	})
 
-	lg.Info("================================================")
-	//conf, err := buildConfigFromFlags(context, kubeconfig)
-	//client, err := kubernetes.NewForConfig(conf)
-	// if err != nil {
-	// 	lg.WithError(err).Error("error getting kubeconfig")
-	// 	panic(err.Error())
-	// }
+	lg.Info("===============================================")
+
 	if err := UseContext(context); err != nil {
 		lg.WithError(err).Error("failed changing context")
 	}
@@ -63,9 +61,6 @@ func deleteEmptyFields(s []string) []string {
 func Run(command string, args []string) error {
 
 	args = deleteEmptyFields(args)
-	// log.WithFields(log.Fields{
-	// 	"command": strings.Join(append([]string{command}, args...), " "),
-	// }).Info("execute command")
 
 	cmd := exec.Command(command, args...)
 	var stderr bytes.Buffer
@@ -103,9 +98,19 @@ func ValidateAndGet() ([]string, error) {
 	}
 	return result, nil
 }
+func SetupCloseHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\r- Ctrl+C pressed in Terminal")
+		DeleteFiles()
+		os.Exit(0)
+	}()
+}
 
 func main() {
-	//fmt.Println(len(os.Args), os.Args)
+
 	params, err := ValidateAndGet()
 	if err != nil {
 		log.WithError(err).Error(err)
@@ -117,25 +122,14 @@ func main() {
 
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 
 	flag.Parse()
 
-	//config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	// config, err = buildConfigFromFlags("", *kubeconfig)
-	// fmt.Println(config)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// create the client
-	// client, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
 	clientCfg, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	currCtx := clientCfg.CurrentContext
+
+	SetupCloseHandler()
 	for _, ctx := range clientCfg.Contexts {
 		if strings.Contains(ctx.Cluster, "arn:aws:eks") {
 			ExecForEach(ctx.Cluster, ctx.Namespace, *kubeconfig, params)

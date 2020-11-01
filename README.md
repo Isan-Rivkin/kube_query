@@ -1,6 +1,7 @@
 # kube_query
 
 Use kubectl but on all of the available k8s clusters available in the kubeconfig file. 
+Currently will query only AWS EKS clusters.
 
 ### Install 
 
