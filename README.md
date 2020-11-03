@@ -16,8 +16,8 @@ make release
 
 ### Usage
 
-It's a `kubectl` wrapper that querys all contexts and finished at the current one. 
-So just use whatever kubectl command with that. 
+It's a `kubectl` wrapper that querys all contexts (e.g all of your clusters).
+Just use whatever kubectl command with that.  
 
 ```bash
 kq <kubectl query>
@@ -29,4 +29,6 @@ kq <kubectl query>
 
 ```bash
 kq get pods --namespace kube-system
+kq get ns
+kq describe pod --namespace default
 ```
