@@ -5,13 +5,24 @@ Currently will query only AWS EKS clusters.
 
 ## Install 
 
-#### from source 
+### from source 
 
 ```bash
 git clone
 # default location on for Macos /usr/local/bin
 make release
 # or use make release BIN_DIR='/path/to/kq/binary' for custom kq binary location
+```
+
+### Target OS: 
+
+```bash
+
+make build-linux
+
+make build-osx
+
+make build-windows
 ```
 
 ### Usage
