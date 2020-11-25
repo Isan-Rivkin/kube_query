@@ -5,6 +5,15 @@ Currently will query only AWS EKS clusters.
 
 ## Install 
 
+### Brew 
+
+MacOS (And ubuntu supported) installation via brew:
+
+```bash
+brew tap isan-rivkin/toolbox
+brew install kq
+```
+
 ### from source 
 
 ```bash
