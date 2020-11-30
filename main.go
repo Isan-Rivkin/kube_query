@@ -33,8 +33,7 @@ func buildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) 
 
 func ExecForEach(context, namespace, kubeconfig string, args []string) {
 	lg := log.WithFields(log.Fields{
-		"context":   context,
-		"namespace": namespace,
+		"context": context,
 	})
 	if Interrupted {
 		lg.Info("Interrupted closing")
